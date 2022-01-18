@@ -1,3 +1,5 @@
+import inspect
+
 import docker
 import logging
 import os
@@ -60,7 +62,37 @@ class Process(tc.host.Local.Process):
         self.stop()
 
 
-def start_host(name, clusters, overwrite=True, host_uri=None, wait_time=1.):
+def write_app(app, config_path, overwrite=False):
+    """Write the configuration of the given :class:`tc.App` to the given path."""
+
+    if inspect.isclass(app):
+        raise ValueError("write_app expects an instance of App, not a class")
+
+    import json
+    import pathlib
+
+    config = tc.to_json(app)
+    config_path = pathlib.Path(config_path)
+    if config_path.exists() and not overwrite:
+        with open(config_path) as f:
+            try:
+                if json.load(f) == config:
+                    return
+            except json.decoder.JSONDecodeError as e:
+                logging.warning(f"invalid JSON at {config_path}: {e}")
+
+        raise RuntimeError(f"There is already an entry at {config_path}")
+    else:
+        import os
+
+        if not config_path.parent.exists():
+            os.makedirs(config_path.parent)
+
+        with open(config_path, 'w') as config_file:
+            config_file.write(json.dumps(config, indent=4))
+
+
+def start_host(name, apps, overwrite=True, host_uri=None, wait_time=1.):
     port = DEFAULT_PORT
     if host_uri is not None and host_uri.port():
         port = host_uri.port()
@@ -69,13 +101,13 @@ def start_host(name, clusters, overwrite=True, host_uri=None, wait_time=1.):
     config_dir += f"/{CONFIG}/{name}/{port}"
     maybe_create_dir(config_dir, overwrite)
 
-    cluster_configs = []
-    for cluster in clusters:
-        cluster_path = tc.uri(cluster).path()
-        tc.write_cluster(cluster, f"{config_dir}{cluster_path}", overwrite)
-        cluster_configs.append(cluster_path)
+    app_configs = []
+    for app in apps:
+        app_path = tc.uri(app).path()
+        write_app(app, f"{config_dir}{app_path}", overwrite)
+        app_configs.append(app_path)
 
-    process = Process(config_dir, cluster_configs)
+    process = Process(config_dir, app_configs)
     process.start(wait_time)
     return tc.host.Local(process, f"http://{process.ADDRESS}:{port}")
 

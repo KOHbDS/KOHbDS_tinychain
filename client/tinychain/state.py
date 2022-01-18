@@ -1,5 +1,7 @@
 """TinyChain `State` s, like `Map`, `Tuple`, and `Op`."""
 
+import abc
+
 from tinychain import ref, reflect
 from tinychain.util import *
 
@@ -381,8 +383,13 @@ class Instance(State):
 
     __uri__ = uri(State) + "/object/instance"
 
+    @staticmethod
+    def schema():
+        return []
+
+    @abc.abstractmethod
     def copy(self):
-        raise NotImplementedError("abstract method")
+        pass
 
 
 # Private helper classes
