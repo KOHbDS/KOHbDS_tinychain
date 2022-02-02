@@ -31,6 +31,7 @@ use crate::txn::Txn;
 use super::{Handler, Route};
 
 const AXIS: Label = label("axis");
+const INDEX: Label = label("index");
 const TENSOR: Label = label("tensor");
 const TENSORS: Label = label("tensors");
 
@@ -1222,17 +1223,63 @@ struct TensorHandler<T> {
     tensor: T,
 }
 
-impl<'a, T: 'a> Handler<'a> for TensorHandler<T>
+impl<'a, T: 'a> TensorHandler<T>
 where
     T: TensorAccess
+        + TensorIndex<fs::Dir, Txn = Txn>
         + TensorIO<fs::Dir, Txn = Txn>
+        + TensorDualIndex<fs::Dir, Tensor>
         + TensorDualIO<fs::Dir, Tensor, Txn = Txn>
         + TensorTransform
         + Clone
         + Send
         + Sync,
     <T as TensorTransform>::Slice: TensorAccess + Send,
-    Tensor: From<<T as TensorTransform>::Slice>,
+    Tensor: From<<T as TensorIndex<fs::Dir>>::Index> + From<<T as TensorTransform>::Slice>,
+{
+    async fn read_bounds(self: Box<Self>, txn: &Txn, bounds: Value) -> TCResult<State> {
+        let bounds = cast_bounds(self.tensor.shape(), bounds)?;
+
+        if bounds.size() == 0 {
+            return Err(TCError::unsupported(format!(
+                "invalid bounds for tensor with shape {}: {}",
+                self.tensor.shape(),
+                bounds
+            )));
+        }
+
+        let shape = self.tensor.shape();
+        if bounds.is_coord(shape) {
+            let coord = bounds.as_coord(shape).expect("tensor coordinate");
+
+            self.tensor
+                .read_value(txn.clone(), coord)
+                .map_ok(Value::from)
+                .map_ok(State::from)
+                .await
+        } else {
+            self.tensor
+                .slice(bounds)
+                .map(Tensor::from)
+                .map(Collection::from)
+                .map(State::from)
+        }
+    }
+}
+
+impl<'a, T: 'a> Handler<'a> for TensorHandler<T>
+where
+    T: TensorAccess
+        + TensorIndex<fs::Dir, Txn = Txn>
+        + TensorIO<fs::Dir, Txn = Txn>
+        + TensorDualIndex<fs::Dir, Tensor>
+        + TensorDualIO<fs::Dir, Tensor, Txn = Txn>
+        + TensorTransform
+        + Clone
+        + Send
+        + Sync,
+    <T as TensorTransform>::Slice: TensorAccess + Send,
+    Tensor: From<<T as TensorIndex<fs::Dir>>::Index> + From<<T as TensorTransform>::Slice>,
 {
     fn get<'b>(self: Box<Self>) -> Option<GetHandler<'a, 'b>>
     where
@@ -1241,32 +1288,7 @@ where
         Some(Box::new(|txn, key| {
             Box::pin(async move {
                 debug!("GET Tensor: {}", key);
-                let bounds = cast_bounds(self.tensor.shape(), key)?;
-
-                if bounds.size() == 0 {
-                    return Err(TCError::unsupported(format!(
-                        "invalid bounds for tensor with shape {}: {}",
-                        self.tensor.shape(),
-                        bounds
-                    )));
-                }
-
-                let shape = self.tensor.shape();
-                if bounds.is_coord(shape) {
-                    let coord = bounds.as_coord(shape).expect("tensor coordinate");
-
-                    self.tensor
-                        .read_value(txn.clone(), coord)
-                        .map_ok(Value::from)
-                        .map_ok(State::from)
-                        .await
-                } else {
-                    self.tensor
-                        .slice(bounds)
-                        .map(Tensor::from)
-                        .map(Collection::from)
-                        .map(State::from)
-                }
+                self.read_bounds(txn, key).await
             })
         }))
     }
@@ -1278,6 +1300,40 @@ where
         Some(Box::new(move |txn, key, value| {
             debug!("PUT Tensor: {} <- {}", key, value);
             Box::pin(write(self.tensor, txn, key, value))
+        }))
+    }
+
+    fn post<'b>(self: Box<Self>) -> Option<PostHandler<'a, 'b>>
+    where
+        'b: 'a,
+    {
+        Some(Box::new(move |txn, mut params| {
+            Box::pin(async move {
+                let index = params
+                    .remove(&INDEX.into())
+                    .ok_or_else(|| TCError::bad_request("missing parameter", INDEX))?;
+
+                match index {
+                    State::Collection(index) => match index {
+                        Collection::Tensor(index) => {
+                            let tensor = self
+                                .tensor
+                                .read(txn.clone(), index)
+                                .map_ok(Tensor::from)
+                                .await?;
+                            Ok(State::Collection(tensor.into()))
+                        }
+                        other => Err(TCError::bad_request("invalid index for Tensor", other)),
+                    },
+                    bounds if Value::can_cast_from(&bounds) => {
+                        let bounds = Value::try_cast_from(bounds, |s| {
+                            TCError::bad_request("invalid bounds for Tensor", s)
+                        })?;
+                        self.read_bounds(txn, bounds).await
+                    }
+                    other => Err(TCError::bad_request("invalid index for Tensor", other)),
+                }
+            })
         }))
     }
 }
@@ -1385,6 +1441,7 @@ where
         + TensorCompare<Tensor, Compare = Tensor, Dense = Tensor>
         + TensorDualIO<fs::Dir, Tensor, Txn = Txn>
         + TensorIndex<fs::Dir, Txn = Txn>
+        + TensorDualIndex<fs::Dir, Tensor>
         + TensorIO<fs::Dir, Txn = Txn>
         + TensorMath<fs::Dir, Tensor, Combine = Tensor>
         + TensorReduce<fs::Dir, Txn = Txn>

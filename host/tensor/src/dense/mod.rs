@@ -23,10 +23,11 @@ use tcgeneric::{Instance, TCBoxTryFuture, TCBoxTryStream};
 use super::sparse::{DenseToSparse, SparseTensor};
 use super::stream::{Read, ReadValueAt};
 use super::{
-    tile, trig_dtype, Bounds, Coord, Phantom, Schema, Shape, Tensor, TensorAccess, TensorBoolean,
-    TensorBooleanConst, TensorCompare, TensorCompareConst, TensorDiagonal, TensorDualIO, TensorIO,
-    TensorIndex, TensorInstance, TensorMath, TensorMathConst, TensorPersist, TensorReduce,
-    TensorTransform, TensorTrig, TensorType, TensorUnary, ERR_COMPLEX_EXPONENT,
+    read_shape, tile, trig_dtype, Bounds, Coord, DenseTensorBase, Phantom, Schema, Shape, Tensor,
+    TensorAccess, TensorBoolean, TensorBooleanConst, TensorCompare, TensorCompareConst,
+    TensorDiagonal, TensorDualIO, TensorDualIndex, TensorIO, TensorIndex, TensorInstance,
+    TensorMath, TensorMathConst, TensorPersist, TensorReduce, TensorTransform, TensorTrig,
+    TensorType, TensorUnary, ERR_COMPLEX_EXPONENT,
 };
 
 use access::*;
@@ -164,7 +165,7 @@ where
 
     pub async fn tile(
         txn: T,
-        tensor: DenseTensor<FD, FS, D, T, DenseAccessor<FD, FS, D, T>>,
+        tensor: DenseTensorBase<FD, FS, D, T>,
         multiples: Vec<u64>,
     ) -> TCResult<Self> {
         if multiples.len() != tensor.ndim() {
@@ -206,7 +207,7 @@ where
     }
 }
 
-impl<FD, FS, D, T> TensorPersist for DenseTensor<FD, FS, D, T, DenseAccessor<FD, FS, D, T>> {
+impl<FD, FS, D, T> TensorPersist for DenseTensorBase<FD, FS, D, T> {
     type Persistent = DenseTensor<FD, FS, D, T, BlockListFile<FD, FS, D, T>>;
 
     fn as_persistent(self) -> Option<Self::Persistent> {
@@ -741,6 +742,77 @@ where
         }
 
         Ok(argmax)
+    }
+}
+
+#[async_trait]
+impl<FD, FS, D, T, B> TensorDualIndex<D, Tensor<FD, FS, D, T>> for DenseTensor<FD, FS, D, T, B>
+where
+    Self: TensorIndex<D, Txn = T, Index = DenseTensor<FD, FS, D, T, BlockListFile<FD, FS, D, T>>>,
+    D: Dir,
+    T: Transaction<D>,
+    FD: File<Array>,
+    FS: File<Node>,
+    B: DenseAccess<FD, FS, D, T>,
+    D::File: AsType<FD> + AsType<FS>,
+    D::FileClass: From<TensorType>,
+{
+    async fn read(self, txn: Self::Txn, coords: Tensor<FD, FS, D, T>) -> TCResult<Self::Index> {
+        match coords {
+            Tensor::Dense(coords) => self.read(txn, coords).await,
+            _ => Err(TCError::unsupported(super::ERR_SPARSE_INDEX)),
+        }
+    }
+}
+
+#[async_trait]
+impl<FD, FS, D, T, L, R> TensorDualIndex<D, DenseTensor<FD, FS, D, T, R>>
+    for DenseTensor<FD, FS, D, T, L>
+where
+    Self: TensorIndex<D, Txn = T, Index = DenseTensor<FD, FS, D, T, BlockListFile<FD, FS, D, T>>>,
+    D: Dir,
+    T: Transaction<D>,
+    FD: File<Array>,
+    FS: File<Node>,
+    L: DenseAccess<FD, FS, D, T>,
+    R: DenseAccess<FD, FS, D, T>,
+    D::File: AsType<FD> + AsType<FS>,
+    D::FileClass: From<TensorType>,
+{
+    async fn read(
+        self,
+        txn: Self::Txn,
+        coords: DenseTensor<FD, FS, D, T, R>,
+    ) -> TCResult<Self::Index> {
+        let ndim = self.ndim();
+        let shape = read_shape(self.shape(), coords.shape())?;
+        let dtype = self.dtype();
+        let txn_id = *txn.id();
+
+        // TODO: optimize to use block_stream
+        let coords = coords.into_inner().value_stream(txn.clone()).await?;
+
+        let file = txn
+            .context()
+            .create_file_unique(txn_id, TensorType::Dense)
+            .await?;
+
+        let source = self.into_inner();
+        let values = coords
+            .map_ok(|i| u64::cast_from(i))
+            .try_chunks(ndim)
+            .map_err(TCError::internal)
+            .map_ok(move |coord| {
+                source
+                    .clone()
+                    .read_value_at(txn.clone(), coord)
+                    .map_ok(|(_coord, n)| n)
+            })
+            .try_buffered(num_cpus::get());
+
+        BlockListFile::from_values(file, txn_id, shape.into(), dtype, values)
+            .map_ok(DenseTensor::from)
+            .await
     }
 }
 

@@ -29,13 +29,21 @@ pub use sparse::{SparseAccess, SparseAccessor, SparseTable, SparseTensor, Sparse
 
 mod bounds;
 mod dense;
+mod index;
 mod sparse;
 mod stream;
 mod transform;
 
+/// The type of [`DenseTensor`] stored in a [`Tensor`] enum.
+pub type DenseTensorBase<FD, FS, D, T> = DenseTensor<FD, FS, D, T, DenseAccessor<FD, FS, D, T>>;
+
+/// The type of [`SparseTensor`] stored in a [`Tensor`] enum.
+pub type SparseTensorBase<FD, FS, D, T> = SparseTensor<FD, FS, D, T, SparseAccessor<FD, FS, D, T>>;
+
 const ERR_COMPLEX_EXPONENT: &str = "raising to a complex power is not supported";
 const ERR_INF: &str = "Tensor combination resulted in an infinite value";
 const ERR_NAN: &str = "Tensor combination resulted in a non-numeric value";
+const ERR_SPARSE_INDEX: &str = "sparse coordinate tensors are not supported";
 
 const PREFIX: PathLabel = path_label(&["state", "collection", "tensor"]);
 
@@ -283,6 +291,13 @@ pub trait TensorIndex<D: Dir> {
 
     /// Return the offset of the maximum value in this [`Tensor`].
     async fn argmax_all(self, txn: Self::Txn) -> TCResult<u64>;
+}
+
+/// Dual-[`Tensor`] indexing operations
+#[async_trait]
+pub trait TensorDualIndex<D: Dir, O>: TensorIndex<D> {
+    /// Create a new [`Tensor`] from the elements at the given `coords` in this [`Tensor`].
+    async fn read(self, txn: Self::Txn, coords: O) -> TCResult<Self::Index>;
 }
 
 /// [`Tensor`] math operations
@@ -539,8 +554,8 @@ impl fmt::Display for TensorType {
 /// An n-dimensional array of numbers which supports basic math and logic operations
 #[derive(Clone)]
 pub enum Tensor<FD, FS, D, T> {
-    Dense(DenseTensor<FD, FS, D, T, DenseAccessor<FD, FS, D, T>>),
-    Sparse(SparseTensor<FD, FS, D, T, SparseAccessor<FD, FS, D, T>>),
+    Dense(DenseTensorBase<FD, FS, D, T>),
+    Sparse(SparseTensorBase<FD, FS, D, T>),
 }
 
 impl<FD, FS, D, T> Tensor<FD, FS, D, T>
@@ -916,6 +931,31 @@ where
         match self {
             Self::Dense(dense) => dense.argmax_all(txn).await,
             Self::Sparse(sparse) => sparse.argmax_all(txn).await,
+        }
+    }
+}
+
+#[async_trait]
+impl<FD, FS, D, T> TensorDualIndex<D, Self> for Tensor<FD, FS, D, T>
+where
+    Self: TensorIndex<D, Txn = T, Index = Self>,
+    FD: File<Array>,
+    FS: File<Node>,
+    D: Dir,
+    T: Transaction<D>,
+    D::File: AsType<FD> + AsType<FS>,
+    D::FileClass: From<BTreeType> + From<TensorType>,
+    DenseTensorBase<FD, FS, D, T>:
+        TensorIndex<D, Txn = T> + TensorDualIndex<D, Tensor<FD, FS, D, T>>,
+    SparseTensorBase<FD, FS, D, T>:
+        TensorIndex<D, Txn = T> + TensorDualIndex<D, Tensor<FD, FS, D, T>>,
+    Self: From<<DenseTensorBase<FD, FS, D, T> as TensorIndex<D>>::Index>,
+    Self: From<<SparseTensorBase<FD, FS, D, T> as TensorIndex<D>>::Index>,
+{
+    async fn read(self, txn: Self::Txn, coords: Self) -> TCResult<Self::Index> {
+        match self {
+            Self::Dense(dense) => dense.read(txn, coords).map_ok(Self::from).await,
+            Self::Sparse(sparse) => sparse.read(txn, coords).map_ok(Self::from).await,
         }
     }
 }
@@ -1547,4 +1587,27 @@ fn coord_bounds(shape: &[u64]) -> Vec<u64> {
     (0..shape.len())
         .map(|axis| shape[axis + 1..].iter().product())
         .collect()
+}
+
+#[inline]
+fn read_shape(source_shape: &[u64], coords_shape: &[u64]) -> TCResult<Shape> {
+    debug_assert!(source_shape.len() > 0);
+
+    if coords_shape.len() != 2 {
+        return Err(TCError::bad_request(
+            "expected 2-dimensional coordinate tensor but found",
+            coords_shape.into_iter().collect::<Tuple<&u64>>(),
+        ));
+    }
+
+    if coords_shape[1] != source_shape.len() as u64 {
+        return Err(TCError::bad_request(
+            "wrong number of axes in coordinate tensor",
+            coords_shape[1],
+        ));
+    }
+
+    let mut shape = source_shape.to_vec();
+    shape[0] = coords_shape[0];
+    Ok(shape.into())
 }

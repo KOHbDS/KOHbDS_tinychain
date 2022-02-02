@@ -20,15 +20,16 @@ use tc_value::{
 };
 use tcgeneric::{Instance, TCBoxTryFuture};
 
-use super::dense::{BlockListSparse, DenseTensor, PER_BLOCK};
+use super::dense::{BlockListSparse, DenseAccess, DenseTensor, PER_BLOCK};
 use super::stream::ReadValueAt;
 use super::transform;
 use super::{
-    coord_bounds, tile, trig_dtype, AxisBounds, Bounds, Coord, Phantom, Schema, Shape, Tensor,
-    TensorAccess, TensorBoolean, TensorBooleanConst, TensorCompare, TensorCompareConst,
-    TensorDiagonal, TensorDualIO, TensorIO, TensorIndex, TensorInstance, TensorMath,
-    TensorMathConst, TensorPersist, TensorReduce, TensorTransform, TensorTrig, TensorType,
-    TensorUnary, ERR_COMPLEX_EXPONENT,
+    coord_bounds, read_shape, tile, trig_dtype, AxisBounds, Bounds, Coord, DenseTensorBase,
+    Phantom, Schema, Shape, SparseTensorBase, Tensor, TensorAccess, TensorBoolean,
+    TensorBooleanConst, TensorCompare, TensorCompareConst, TensorDiagonal, TensorDualIO,
+    TensorDualIndex, TensorIO, TensorIndex, TensorInstance, TensorMath, TensorMathConst,
+    TensorPersist, TensorReduce, TensorTransform, TensorTrig, TensorType, TensorUnary,
+    ERR_COMPLEX_EXPONENT,
 };
 
 use access::*;
@@ -169,7 +170,7 @@ where
     /// Tile the given `tensor` into a new `SparseTensor`
     pub async fn tile(
         txn: T,
-        tensor: SparseTensor<FD, FS, D, T, SparseAccessor<FD, FS, D, T>>,
+        tensor: SparseTensorBase<FD, FS, D, T>,
         multiples: Vec<u64>,
     ) -> TCResult<Self> {
         if multiples.len() != tensor.ndim() {
@@ -202,7 +203,7 @@ where
     }
 }
 
-impl<FD, FS, D, T> TensorPersist for SparseTensor<FD, FS, D, T, SparseAccessor<FD, FS, D, T>> {
+impl<FD, FS, D, T> TensorPersist for SparseTensorBase<FD, FS, D, T> {
     type Persistent = SparseTensor<FD, FS, D, T, SparseTable<FD, FS, D, T>>;
 
     fn as_persistent(self) -> Option<Self::Persistent> {
@@ -737,6 +738,80 @@ where
             filled.map_ok(move |(coord, value)| (coord_to_offset(&coord, &coord_bounds), value));
         let imax = imax(filled, zero, size).await?;
         Ok(imax.0)
+    }
+}
+
+#[async_trait]
+impl<FD, FS, D, T, A> TensorDualIndex<D, Tensor<FD, FS, D, T>> for SparseTensor<FD, FS, D, T, A>
+where
+    Self: TensorIndex<D, Txn = T, Index = SparseTensor<FD, FS, D, T, SparseTable<FD, FS, D, T>>>
+        + TensorDualIndex<D, DenseTensorBase<FD, FS, D, T>>,
+    FD: File<Array>,
+    FS: File<Node>,
+    D: Dir,
+    T: Transaction<D>,
+    A: SparseAccess<FD, FS, D, T>,
+    D::File: AsType<FD> + AsType<FS>,
+    D::FileClass: From<BTreeType> + From<TensorType>,
+{
+    async fn read(self, txn: Self::Txn, coords: Tensor<FD, FS, D, T>) -> TCResult<Self::Index> {
+        match coords {
+            Tensor::Dense(coords) => self.read(txn, coords).await,
+            _ => Err(TCError::unsupported(super::ERR_SPARSE_INDEX)),
+        }
+    }
+}
+
+#[async_trait]
+impl<FD, FS, D, T, L, R> TensorDualIndex<D, DenseTensor<FD, FS, D, T, R>>
+    for SparseTensor<FD, FS, D, T, L>
+where
+    Self: TensorIndex<D, Txn = T, Index = SparseTensor<FD, FS, D, T, SparseTable<FD, FS, D, T>>>,
+    FD: File<Array>,
+    FS: File<Node>,
+    D: Dir,
+    T: Transaction<D>,
+    L: SparseAccess<FD, FS, D, T>,
+    R: DenseAccess<FD, FS, D, T>,
+    D::File: AsType<FD> + AsType<FS>,
+    D::FileClass: From<BTreeType> + From<TensorType>,
+{
+    async fn read(
+        self,
+        txn: Self::Txn,
+        coords: DenseTensor<FD, FS, D, T, R>,
+    ) -> TCResult<Self::Index> {
+        let source_shape = self.shape().to_vec();
+        let ndim = self.ndim();
+        let shape = read_shape(self.shape(), coords.shape())?;
+        let dtype = self.dtype();
+        let schema = Schema { shape, dtype };
+
+        let txn_id = *txn.id();
+        let dir = txn.context().create_dir_unique(txn_id).await?;
+        let table = SparseTable::create(&dir, schema, txn_id).await?;
+
+        let coords = coords.into_inner().value_stream(txn.clone()).await?;
+        let coord_bounds = coord_bounds(self.shape());
+        let source = self.into_inner();
+        coords
+            .map_ok(|n| u64::cast_from(n))
+            .try_chunks(ndim)
+            .map_ok(move |coord| source.clone().read_value_at(txn.clone(), coord))
+            .map_err(TCError::internal)
+            .try_buffered(num_cpus::get())
+            .map_ok(|(_, n)| n)
+            .enumerate()
+            .map(|(offset, r)| r.map(|n| (offset as u64, n)))
+            .map_ok(|(offset, n)| {
+                let coord = coord_from_offset(offset, &source_shape, &coord_bounds);
+                table.write_value(txn_id, coord, n)
+            })
+            .try_buffered(num_cpus::get())
+            .try_fold((), |(), ()| future::ready(Ok(())))
+            .await?;
+
+        Ok(SparseTensor::from(table))
     }
 }
 
@@ -1418,4 +1493,16 @@ impl<'en> en::IntoStream<'en> for SparseTensorView<'en> {
         let filled = en::SeqStream::from(self.filled);
         (self.schema, filled).into_stream(encoder)
     }
+}
+
+#[inline]
+pub fn coord_from_offset(offset: u64, shape: &[u64], coord_bounds: &[u64]) -> Coord {
+    debug_assert_eq!(shape.len(), coord_bounds.len());
+
+    coord_bounds
+        .iter()
+        .map(|bound| offset / *bound)
+        .zip(shape)
+        .map(|(offset, dim)| offset % dim)
+        .collect()
 }

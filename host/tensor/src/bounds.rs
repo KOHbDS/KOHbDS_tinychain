@@ -7,11 +7,15 @@ use safecast::{Match, TryCastFrom, TryCastInto};
 
 use tc_error::*;
 use tc_value::Value;
+use crate::DenseTensorBase;
 
 use super::Coord;
 
+// TODO: remove this dependency
 pub type Coords = MultiProduct<AxisIter>;
 
+
+// TODO: remove
 #[derive(Clone)]
 pub enum AxisIter {
     One(std::iter::Once<u64>),
