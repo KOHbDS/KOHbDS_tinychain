@@ -14,6 +14,7 @@ NUM_EXAMPLES = 20
 
 
 # TODO: migrate these tests to use a hosted training backend, when available
+@unittest.skip
 class DNNTests(ClientTest):
     @classmethod
     def setUpClass(cls):

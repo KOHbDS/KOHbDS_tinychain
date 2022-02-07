@@ -1,6 +1,5 @@
 from abc import abstractmethod, ABC
 
-from tinychain.state import Map, Tuple
 from tinychain.collection.tensor import Tensor
 
 EPS = 10**-6
@@ -43,14 +42,16 @@ class Sigmoid(Activation):
         return 1 / (1 + (-x).exp())
 
     def backward(self, x):
-        sig = self.forward(x)
+        sig = self.forward(x)  # TODO: remove after implementing GradientTape
         return sig * (1 - sig)
 
     def std_initializer(self, input_size, output_size):
+        """Calculate the standard deviation for Xavier initialization for use with this :class:`Activation` function."""
+
         return 1.0 * (2 / (input_size + output_size))**0.5
 
 
-#TODO: remove when automatic differentiation is implemented
+# TODO: remove when automatic differentiation is implemented
 class Tanh(Activation):
     """Hyperbolic tangent activation function"""
 
@@ -61,6 +62,8 @@ class Tanh(Activation):
         return 1 - self.forward(x)**2
 
     def std_initializer(self, input_size, output_size):
+        """Calculate the standard deviation for Xavier initialization for use with this :class:`Activation` function."""
+
         return (5 / 3) * (2 / (input_size + output_size))**0.5
 
 
@@ -74,6 +77,8 @@ class ReLU(Activation):
         return Z > 0
 
     def std_initializer(self, input_size, output_size):
+        """Calculate the optimal standard deviation for Kaiming initialization for use with :class:`ReLU` activation."""
+
         return (2**(0.5)) * (2 / (input_size + output_size))**0.5
 
 
@@ -125,34 +130,6 @@ class Differentiable(object):
             return [self[i].write(new_values[i]) for i in range(len(shape))]
         else:
             raise NotImplementedError(f"{self.__class__} needs a `write` method")
-
-
-class Layer(Map, Differentiable):
-    """A :class:`Layer` in a :class:`NeuralNet`"""
-
-    @classmethod
-    @abstractmethod
-    def create(cls, *args, **kwargs):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def load(cls, *args, **kwargs):
-        pass
-
-
-class NeuralNet(Tuple, Differentiable):
-    """A neural network comprising a :class:`Tuple` of :class:`Layers`"""
-
-    @classmethod
-    @abstractmethod
-    def create(cls, *args, **kwargs):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def load(cls, *args, **kwargs):
-        pass
 
 
 class Parameter:
