@@ -73,8 +73,8 @@ class AppTests(unittest.TestCase):
     def setUpClass(cls):
         cls.host = testutils.start_host("test_neural_net", [Trainer()])
 
-    def testUp(self):
-        print(self.host.get(tc.uri(Trainer) + "/Sequential"))
+    def testTrain(self):
+        pass
 
 
 if __name__ == "__main__":
