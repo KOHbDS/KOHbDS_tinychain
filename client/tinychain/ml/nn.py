@@ -1,18 +1,51 @@
 import functools
 import operator
+
+from abc import abstractmethod
 from typing import List
 
 from tinychain.value import Int
 from tinychain.collection.tensor import Dense, Tensor, einsum
-from tinychain.ml import DiffedParameter, Identity, Layer, NeuralNet, Parameter
+from tinychain.ml import DiffedParameter, Differentiable, Identity, Parameter
 from tinychain.ref import After
+from tinychain.state import Map, Tuple
+
+
+class Layer(Map, Differentiable):
+    """A :class:`Layer` in a :class:`NeuralNet`"""
+
+    @classmethod
+    @abstractmethod
+    def create(cls, *args, **kwargs):
+        """Create a new, zero-valued :class:`Layer`."""
+
+    @classmethod
+    @abstractmethod
+    def load(cls, *args, **kwargs):
+        """Load a :class:`Layer` from an existing definition"""
+
+    @abstractmethod
+    def reset(self):
+        """Randomly re-initialize this :class:`Layer`"""
+
+
+class NeuralNet(Tuple, Differentiable):
+    """A neural network comprising a :class:`Tuple` of :class:`Layers`"""
+
+    @classmethod
+    @abstractmethod
+    def load(cls, *args, **kwargs):
+        """Load a :class:`NeuralNet` from an existing definition"""
+
+    def reset(self):
+        """Randomly re-initialize this :class:`NeuralNet`"""
 
 
 class DNNLayer(Layer):
     @classmethod
     def create(cls, name: str, input_size, output_size, activation=Identity()):
-        """Create a new, empty `DNNLayer` with the given shape and activation function. Initializing `ConvLayer`
-        parameters by Xavier initialization for Sigmoid, Tanh activations, and Kaiming initialization for ReLU.
+        """
+        Create a new, empty `DNNLayer` with the given shape and activation function.
 
         Args:
             `name`: name and number of layer;
@@ -21,15 +54,14 @@ class DNNLayer(Layer):
             `activation`: activation function.
         """
 
-        std = activation.std_initializer(input_size, output_size)
-        weights = Dense.random_normal(shape=[input_size, output_size], mean=0.0, std=std)
-        bias = Dense.random_normal(shape=[output_size, ], mean=0.0, std=std)
-
+        weights = Dense.create([input_size, output_size])
+        bias = Dense.create([output_size])
         return cls.load(name, weights, bias, activation)
 
     @classmethod
     def load(cls, name, weights, bias, activation):
         """Load a `DNNLayer` with the given `weights` and `bias` tensors."""
+
         class _DNNLayer(cls):
             @classmethod
             @property
@@ -64,16 +96,22 @@ class DNNLayer(Layer):
 
         return _DNNLayer({name + ".bias": bias, name + ".weights": weights})
 
+    def reset(self):
+        input_size, output_size = self[0].shape.unpack(2)
+        std = self.activation.std_initializer(input_size, output_size)
+        weights = self["weights"].write(Dense.random_normal(self[0].shape, std))
+        bias = self["bias"].write(Dense.random_normal(self[1].shape, std))
+        return weights, bias
+
 
 class ConvLayer(Layer):
     @classmethod
     def create(cls, name: str, inputs_shape, filter_shape, stride=1, padding=1, activation=Identity()):
-        """Create a new, empty `ConvLayer` with the given shape and activation function. Initializing `ConvLayer`
-        parameters by Xavier initialization for Sigmoid, Tanh activations, and Kaiming initialization for ReLU
+        """Create a new, empty `ConvLayer` with the given shape and activation function.
 
         Args:
             `name`: name and number of layer;
-            `inputs_stape`: size of inputs [c_i, h_i, w_i] where
+            `inputs_shape`: size of inputs [c_i, h_i, w_i] where
                 `c_i`: number of channels;
                 `h_i`: height's width  for each channel;
                 'w_i': matrix's width  for each channel.
@@ -87,15 +125,15 @@ class ConvLayer(Layer):
         c_i, h_i, w_i = inputs_shape
         out_c, h_f, w_f = filter_shape
 
-        std = activation.std_initializer(c_i * h_i * w_i, out_c * h_f * w_f)
-        weights = Dense.random_normal([out_c, c_i, h_f, w_f], mean=0.0, std=std)
-        bias = Dense.random_normal([out_c, 1], mean=0.0, std=std)
+        weights = Dense.create([out_c, c_i, h_f, w_f])
+        bias = Dense.create([out_c, 1])
 
         return cls.load(name, weights, bias, inputs_shape, filter_shape, stride, padding, activation)
 
     @classmethod
     def load(cls, name, weights, bias, inputs_shape, filter_shape, stride, padding, activation):
         """Load a `ConvLayer` with the given `weights` and `bias` tensors."""
+
         class _ConvLayer(cls):
             @classmethod
             @property
@@ -163,12 +201,16 @@ class ConvLayer(Layer):
 
         return _ConvLayer({name + ".weights": weights, name + ".bias": bias})
 
+    def reset(self):
+        input_size, output_size = self["weights"].shape.unpack(2)
+        std = self.activation.std_initializer(input_size, output_size)
+        weights = Dense.random_normal(self["weights"].shape, std=std)
+        bias = Dense.random_normal(self["bias"].shape, std=std)
+        return weights, bias
+
 
 class Sequential(NeuralNet):
-    """Create a new NeuralNet as list `Layer`'s. `Layer`'s could be `DNNLayer` and `ConvLayer`.
-        Args:
-            `layers` a list of exemplar `DNNLayer` or `ConvLayer` with parameters:
-    """
+    """A neural network which comprises a sequence of `Layer` s"""
 
     @classmethod
     def load(cls, layers):
@@ -182,6 +224,9 @@ class Sequential(NeuralNet):
             @property
             def shape(cls):
                 return [layer.shape for layer in layers]
+
+            def reset(self):
+                return [self[i].reset() for i in range(n)]
 
             def forward(self, inputs):
                 state, _ = self[0].forward(inputs)
