@@ -1,46 +1,78 @@
-import math
-import numpy as np
 import unittest
 import testutils
 import tinychain as tc
+
 
 LAYER_CONFIG = [(2, 2, tc.ml.ReLU()), (2, 1, tc.ml.Sigmoid())]
 LEARNING_RATE = 0.1
 BATCH_SIZE = 25
 
 
-class App(tc.Cluster):
-    __uri__ = tc.URI("/test/neural_net")
+URI = tc.URI("/test/neural_net")
 
-    def _configure(self):
-        layers = [tc.ml.nn.DNNLayer.create(f"layer_{i}", *l) for i, l in enumerate(LAYER_CONFIG)]
-        dnn = tc.ml.nn.Sequential.load(layers)
-        self.net = tc.chain.Sync(dnn)
 
-    @tc.get_method
-    def up(self) -> tc.Bool:
-        return True
+class Layer(tc.Map, metaclass=tc.Meta):
+    ERR_BASE_CLASS = tc.String("this is a base class--consider DNNLayer or ConvLayer instead")
+    __uri__ = URI.append("Layer")
+
+    @tc.put_method
+    def reset(self):
+        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
 
     @tc.post_method
-    def train(self, inputs: tc.tensor.Dense, labels: tc.tensor.Dense):
-        # TODO: implement this using a background task
-        pass
+    def forward(self, inputs):
+        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
+
+    @tc.post_method
+    def backward(self, inputs, loss):
+        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
+
+
+class DNNLayer(Layer):
+    __uri__ = URI.append("DNNLayer")
+
+
+class NeuralNet(tc.Tuple, metaclass=tc.Meta):
+    __uri__ = URI.append("NeuralNet")
+
+    @tc.put_method
+    def reset(self):
+        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
+
+    @tc.post_method
+    def forward(self, inputs):
+        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
+
+    @tc.post_method
+    def backward(self, inputs, loss):
+        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
+
+
+class Sequential(NeuralNet):
+    __uri__ = URI.append("Sequential")
+
+    @tc.post_method
+    def forward(self, inputs):
+        return inputs
+
+
+class Trainer(tc.Cluster):
+    __uri__ = URI
+
+    def _configure(self):
+        self.Layer = Layer
+        self.DNNLayer = DNNLayer
+        self.NeuralNet = NeuralNet
+        self.Sequential = Sequential
 
 
 class AppTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.host = testutils.start_host("test_neural_net", [App])
+        cls.host = testutils.start_host("test_neural_net", [Trainer])
 
-    def testApp(self):
-        self.assertTrue(self.host.get(tc.uri(App) + "/up"))
-
-    def testTrain(self):
-        pass
-
-
-def load(nparray, dtype=tc.F64):
-    return tc.tensor.Dense.load(nparray.shape, dtype, nparray.flatten().tolist())
+    def testUp(self):
+        print(self.host.get(tc.uri(Trainer) + "/Sequential"))
 
 
 if __name__ == "__main__":

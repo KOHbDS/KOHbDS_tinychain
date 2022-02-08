@@ -55,7 +55,11 @@ class State(object):
             return self.__class__(URI(name))
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({form_of(self)})"
+        # avoid infinite recursion in the error message in `form_of` in case __form__ is not set
+        if hasattr(self, "__form__"):
+            return f"{self.__class__.__name__}({form_of(self)})"
+        else:
+            return self.__class__.__name__
 
     def _get(self, name, key=None, rtype=None):
         subject = ref.MethodSubject(self, name)
