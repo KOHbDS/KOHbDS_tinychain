@@ -11,10 +11,10 @@ from tinychain.state import State, Tuple
 from tinychain.util import form_of, uri, URI, to_json
 
 
+# TODO: delete `Cluster` and replace with `App` and `Library`
 class Cluster(object, metaclass=Meta):
     """A hosted TinyChain service."""
 
-    # TODO: get rid of this
     @classmethod
     def __use__(cls):
         instance = cls()
