@@ -112,6 +112,7 @@ class DNNTests(ClientTest):
 
 
 # TODO: migrate these tests to use a hosted training backend, when available
+@unittest.skip
 class CNNTests(ClientTest):
     def test1D(self):
         cxt = tc.Context()

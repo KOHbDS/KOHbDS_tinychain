@@ -60,7 +60,7 @@ class Process(tc.host.Local.Process):
         self.stop()
 
 
-def start_host(name, clusters, overwrite=True, host_uri=None, wait_time=1.):
+def start_host(name, apps, overwrite=True, host_uri=None, wait_time=1.):
     port = DEFAULT_PORT
     if host_uri is not None and host_uri.port():
         port = host_uri.port()
@@ -69,13 +69,13 @@ def start_host(name, clusters, overwrite=True, host_uri=None, wait_time=1.):
     config_dir += f"/{CONFIG}/{name}/{port}"
     maybe_create_dir(config_dir, overwrite)
 
-    cluster_configs = []
-    for cluster in clusters:
-        cluster_path = tc.uri(cluster).path()
-        tc.write_cluster(cluster, f"{config_dir}{cluster_path}", overwrite)
-        cluster_configs.append(cluster_path)
+    app_configs = []
+    for app in apps:
+        app_path = tc.uri(app).path()
+        tc.app.write_config(app, f"{config_dir}{app_path}", overwrite)
+        app_configs.append(app_path)
 
-    process = Process(config_dir, cluster_configs)
+    process = Process(config_dir, app_configs)
     process.start(wait_time)
     return tc.host.Local(process, f"http://{process.ADDRESS}:{port}")
 

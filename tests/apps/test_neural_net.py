@@ -2,7 +2,6 @@ import unittest
 import testutils
 import tinychain as tc
 
-
 LAYER_CONFIG = [(2, 2, tc.ml.ReLU()), (2, 1, tc.ml.Sigmoid())]
 LEARNING_RATE = 0.1
 BATCH_SIZE = 25
@@ -56,20 +55,23 @@ class Sequential(NeuralNet):
         return inputs
 
 
-class Trainer(tc.Cluster):
+class Trainer(tc.app.Library):
     __uri__ = URI
 
-    def _configure(self):
-        self.Layer = Layer
-        self.DNNLayer = DNNLayer
-        self.NeuralNet = NeuralNet
-        self.Sequential = Sequential
+    @staticmethod
+    def exports():
+        return [
+            Layer,
+            DNNLayer,
+            NeuralNet,
+            Sequential,
+        ]
 
 
 class AppTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.host = testutils.start_host("test_neural_net", [Trainer])
+        cls.host = testutils.start_host("test_neural_net", [Trainer()])
 
     def testUp(self):
         print(self.host.get(tc.uri(Trainer) + "/Sequential"))
