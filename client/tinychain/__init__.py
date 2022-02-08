@@ -1,4 +1,3 @@
-import tinychain.app
 import tinychain.chain
 import tinychain.collection.bound as bound
 import tinychain.error
@@ -10,6 +9,7 @@ import tinychain.ml.optimizer
 import tinychain.op
 import tinychain.ref
 
+from tinychain.app import App, Library, write_config
 from tinychain.cluster import Cluster, write_cluster
 from tinychain.collection import Column
 from tinychain.collection import btree, table, tensor
