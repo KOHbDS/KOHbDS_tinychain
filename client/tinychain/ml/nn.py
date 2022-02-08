@@ -70,7 +70,7 @@ class DNNLayer(Layer):
 
             def forward(self, x):
                 inputs = Tensor(einsum("ki,ij->kj", [x, self[name + ".weights"]])) + self[name + ".bias"]
-                return activation.forward(inputs), None
+                return activation.forward(inputs)
 
             def backward(self, x, loss):
                 m = Int(x.shape[0])
