@@ -113,8 +113,8 @@ class ConvLayer(Layer):
             `name`: name and number of layer;
             `inputs_shape`: size of inputs [c_i, h_i, w_i] where
                 `c_i`: number of channels;
-                `h_i`: height's width  for each channel;
-                'w_i': matrix's width  for each channel.
+                `h_i`: height's width for each channel;
+                'w_i': matrix's width for each channel.
             `filter_shape`: size of filter [h, w, out_c] where
                 `out_c`: number of output channels;
                 `h_f`: height of the kernel;
