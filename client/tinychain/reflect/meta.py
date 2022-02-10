@@ -17,14 +17,18 @@ class MethodStub(object):
         return self.dtype(header, self.form, name)
 
 
-def header(cls):
+def header(cls, requires_form=True):
     instance_uri = URI("self")
 
     class Header(cls):
         pass
 
-    header = Header(instance_uri)
-    instance = cls(instance_uri)
+    if requires_form:
+        header = Header(instance_uri)
+        instance = cls(instance_uri)
+    else:
+        header = Header()
+        instance = cls()
 
     for name, attr in inspect.getmembers(instance):
         if name.startswith('_') or isinstance(attr, URI):

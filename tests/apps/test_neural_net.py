@@ -7,134 +7,46 @@ import tinychain as tc
 URI = tc.URI("/test/neural_net")
 
 
+# TODO: add support for @classmethod and @staticmethod to app.model
+@tc.app.model
 class Sigmoid(object):
     """Sigmoid activation function"""
 
-    __uri__ = URI + "/sigmoid"
+    __uri__ = URI + "/Sigmoid"
 
-    @staticmethod
-    def std_initializer(input_size, output_size):
+    @tc.get_method
+    def optimal_std(self, shape: tc.Tuple):
         """Calculate the standard deviation for Xavier initialization for use with this :class:`Activation` function."""
 
+        input_size, output_size = [tc.UInt(dim) for dim in shape.unpack(2)]
         return 1.0 * (2 / (input_size + output_size))**0.5
 
-    @staticmethod
-    def forward(inputs: tc.tensor.Tensor):
+    @tc.post_method
+    def forward(self, inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
         return 1 / (1 + (-inputs).exp())
 
-    @staticmethod
-    def backward(inputs: tc.tensor.Tensor):
-        sig = 1 / (1 + (-inputs).exp())  # TODO: cache this value
+    @tc.post_method
+    def backward(self, inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
+        sig = self.forward(inputs=inputs)  # TODO: cache this value
         return sig * (1 - sig)
 
 
-# TODO: refactor into a model when ORM is implemented
-class Layer(tc.Map, metaclass=tc.Meta):
-    ERR_BASE_CLASS = tc.String("this is a base class--consider DNNLayer or ConvLayer instead")
-    __uri__ = URI.append("Layer")
-
-    @tc.put_method
-    def reset(self):
-        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
-
-    @tc.post_method
-    def forward(self, inputs: tc.tensor.Tensor):
-        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
-
-    @staticmethod
-    @tc.post_method
-    def backward(self, inputs, loss):
-        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
-
-
-class DNNLayer(Layer):
-    __uri__ = tc.uri(Layer).append("DNN")
-
-    @classmethod
-    def create(cls, input_size, output_size):
-        """
-        Create a new, empty `DNNLayer` with the given shape and activation function.
-
-        Args:
-            `input_size`: size of inputs;
-            `output_size`: size of outputs;
-            `activation`: activation function.
-        """
-
-        weights = tc.tensor.Dense.create([input_size, output_size])
-        bias = tc.tensor.Dense.create([output_size])
-        return cls.load(weights, bias)
-
-    @classmethod
-    def load(cls, weights, bias):
-        """Load a `DNNLayer` with the given `weights` and `bias` tensors."""
-
-        return cls({"weights": weights, "bias": bias})
-
-    @tc.post_method
-    def forward(self, inputs):
-        inputs = tc.tensor.einsum("ki,ij->kj", [inputs, self["weights"]]) + self["bias"]
-        return Sigmoid.forward(inputs=inputs)
-
-
-# TODO: refactor into a model when ORM is implemented
-class NeuralNet(tc.Tuple, metaclass=tc.Meta):
-    __uri__ = URI.append("NeuralNet")
-
-    @tc.put_method
-    def reset(self):
-        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
-
-    @tc.post_method
-    def forward(self, inputs):
-        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
-
-    @tc.post_method
-    def backward(self, inputs, loss):
-        return tc.error.NotImplemented(Layer.ERR_BASE_CLASS)
-
-
-class Sequential(NeuralNet):
-    __uri__ = tc.uri(NeuralNet).append("Sequential")
-
-    @classmethod
-    def load(cls, layers):
-        if not layers:
-            raise ValueError("cannot initialize a neural net with no layers")
-
-        return cls(layers)
-
-    @tc.post_method
-    def forward(self, inputs):
-        return inputs
-
-
-LAYER_CONFIG = [(2, 2), (2, 1)]
-LEARNING_RATE = 0.1
-BATCH_SIZE = 25
-
-
-class Trainer(tc.app.App):
+class Trainer(tc.app.Library):
     __uri__ = URI
 
     @staticmethod
     def exports():
         return [
-            Layer,
-            DNNLayer,
-            NeuralNet,
-            Sequential,
+            Sigmoid,
         ]
 
     def __init__(self):
-        layers = [DNNLayer.create(*l) for l in LAYER_CONFIG]
-        dnn = Sequential.load(layers)
-        self.net = tc.chain.Sync(dnn)
-        tc.app.App.__init__(self)
+        pass
 
-    # @tc.post_method
-    # def eval(self, inputs: tc.tensor.Tensor):
-    #     return self.net.forward(inputs=inputs)
+    @tc.post_method
+    def forward(self, cxt, inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
+        cxt.activation = Sigmoid()
+        return cxt.activation.forward(inputs=inputs)
 
 
 class AppTests(unittest.TestCase):
@@ -142,13 +54,8 @@ class AppTests(unittest.TestCase):
     def setUpClass(cls):
         cls.host = testutils.start_host("test_neural_net", [Trainer()])
 
-    def testUp(self):
-        print(self.host.get(tc.uri(Trainer) + "/net"))
-
-    @unittest.skip
-    def testEval(self):
-        inputs = np.random.random(BATCH_SIZE * 2).reshape([BATCH_SIZE, 2])
-        print(self.host.post(tc.uri(Trainer) + "/eval", {"inputs": load(inputs)}))
+    def testForward(self):
+        print(self.host.post(tc.uri(Trainer) + "/forward", {"inputs": load(np.ones([1]))}))
 
 
 def load(nparray, dtype=tc.F32):

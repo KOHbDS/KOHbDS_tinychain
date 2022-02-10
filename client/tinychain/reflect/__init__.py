@@ -3,7 +3,6 @@ import inspect
 from pydoc import locate
 
 from tinychain.util import deanonymize, form_of, get_ref, to_json, uri, URI
-from tinychain.state import State
 
 from .meta import gen_headers, header, Meta
 

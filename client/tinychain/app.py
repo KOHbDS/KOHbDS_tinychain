@@ -5,50 +5,33 @@ import logging
 
 from tinychain.chain import Chain
 from tinychain.decorators import MethodStub
-from tinychain.reflect import Meta
-from tinychain.state import Scalar, State
+from tinychain.reflect import header, Meta
+from tinychain.state import Instance, Scalar, State
 from tinychain.util import get_ref, to_json, uri, URI
+
+
+def model(cls):
+    if not inspect.isclass(cls):
+        raise ValueError(f"Model must be a class, not {cls}")
+
+    if not hasattr(cls, "__uri__"):
+        raise ValueError(f"a Model must have a URI (hint: set the __uri__ attribute of the class)")
+
+    class Model(Instance, cls, metaclass=Meta):
+        __uri__ = cls.__uri__
+
+        def __init__(self, form=None):
+            Instance.__init__(self, form)
+
+    Model.__name__ = cls.__name__
+    return Model
 
 
 class App(object):
     def __json__(self):
-        form = {}
+        form = handle_exports(self.exports())
 
-        for cls in self.exports():
-            if not inspect.isclass(cls):
-                raise ValueError(f"App can only export a class, not {cls}")
-            elif type(cls) != Meta:
-                logging.warning(f"{cls} is not of type {Meta} and may not support JSON encoding")
-
-            form[cls.__name__] = to_json(cls)
-
-        # TODO: de-duplicate header-builder code from reflect.meta
-        class Header(cls):
-            pass
-
-        header = Header(uri(self))
-        instance = cls(uri(self))
-
-        for name, attr in inspect.getmembers(self):
-            if name.startswith('_') or isinstance(attr, URI):
-                continue
-            elif inspect.ismethod(attr) and attr.__self__ is cls:
-                # it's a @classmethod
-                continue
-
-            if isinstance(attr, MethodStub):
-                setattr(header, name, attr.method(instance, name))
-            elif isinstance(attr, State):
-                member_uri = uri(self).append(name)
-                attr_ref = get_ref(attr, member_uri)
-
-                if not uri(attr_ref) == member_uri:
-                    raise RuntimeError(f"failed to assign URI {member_uri} to instance attribute {attr_ref} "
-                                       + f"(assigned URI is {uri(attr_ref)})")
-
-                setattr(header, name, attr_ref)
-            else:
-                setattr(header, name, attr)
+        _, instance_header = header(self, False)
 
         for name, attr in inspect.getmembers(self):
             if name.startswith('_') or name == "exports":
@@ -57,7 +40,7 @@ class App(object):
             if is_mutable(attr) and not isinstance(attr, Chain):
                 raise RuntimeError("mutable state must be in a Chain")
             elif isinstance(attr, MethodStub):
-                form[name] = to_json(attr.method(header, name))
+                form[name] = to_json(attr.method(instance_header, name))
             else:
                 form[name] = to_json(attr)
 
@@ -70,22 +53,19 @@ class Library(object):
         return []
 
     def __json__(self):
-        form = {}
-
-        for cls in self.exports():
-            if not inspect.isclass(cls):
-                raise ValueError(f"Library can only export a class, not {cls}")
-            elif type(cls) != Meta:
-                logging.warning(f"{cls} is not of type {Meta} and may not support JSON encoding")
-
-            form[cls.__name__] = to_json(cls)
+        form = handle_exports(self)
 
         for name, attr in inspect.getmembers(self):
             if name.startswith('_') or name == "exports":
                 continue
 
+            print(type(self))
+            _, instance_header = header(type(self), False)
+
             if is_mutable(attr):
                 raise RuntimeError("a Library may not contain mutable state")
+            elif isinstance(attr, MethodStub):
+                form[name] = to_json(attr.method(instance_header, name))
             else:
                 form[name] = to_json(attr)
 
@@ -121,7 +101,7 @@ def write_config(app_or_library, config_path, overwrite=False):
             except json.decoder.JSONDecodeError as e:
                 logging.warning(f"invalid JSON at {config_path}: {e}")
 
-        raise RuntimeError(f"There is already an entry at {config_path}")
+        raise RuntimeError(f"there is already an entry at {config_path}")
     else:
         import os
 
@@ -130,3 +110,21 @@ def write_config(app_or_library, config_path, overwrite=False):
 
         with open(config_path, 'w') as config_file:
             config_file.write(json.dumps(config, indent=4))
+
+
+def handle_exports(app_or_lib):
+    form = {}
+
+    for cls in app_or_lib.exports():
+        if not inspect.isclass(cls):
+            raise ValueError(f"Library can only export a class, not {cls}")
+        elif type(cls) != Meta:
+            logging.warning(f"{cls} is not of type {Meta} and may not support JSON encoding")
+
+        expected_uri = uri(app_or_lib).append(cls.__name__)
+        if uri(cls) != expected_uri:
+            raise ValueError(f"the URI of {cls} should be {expected_uri}")
+
+        form[cls.__name__] = to_json(cls)
+
+    return form
