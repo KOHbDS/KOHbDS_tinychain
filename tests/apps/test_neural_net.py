@@ -7,9 +7,29 @@ import tinychain as tc
 URI = tc.URI("/test/neural_net")
 
 
+@tc.app.model
+class Activation(object):
+    __uri__ = URI + "/Activation"
+
+    @tc.get_method
+    def optimal_std(self, shape: tc.Tuple):
+        """Calculate the recommended standard deviation for a trainable parameter using this `Activation`."""
+
+        input_size, output_size = [tc.UInt(dim) for dim in shape.unpack(2)]
+        return (input_size * output_size)**0.5
+
+    @tc.post_method
+    def forward(self, _inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
+        return tc.error.NotImplemented("Activation is an abstract class")
+
+    @tc.post_method
+    def backward(self, _inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
+        return tc.error.NotImplemented("Activation is an abstract class")
+
+
 # TODO: add support for @classmethod and @staticmethod to app.model
 @tc.app.model
-class Sigmoid(object):
+class Sigmoid(Activation):
     """Sigmoid activation function"""
 
     __uri__ = URI + "/Sigmoid"

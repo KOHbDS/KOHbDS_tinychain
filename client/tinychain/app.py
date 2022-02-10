@@ -17,14 +17,17 @@ def model(cls):
     if not hasattr(cls, "__uri__"):
         raise ValueError(f"a Model must have a URI (hint: set the __uri__ attribute of the class)")
 
-    class Model(Instance, cls, metaclass=Meta):
-        __uri__ = cls.__uri__
+    if issubclass(cls, Instance):
+        return cls
+    else:
+        class Model(Instance, cls, metaclass=Meta):
+            __uri__ = cls.__uri__
 
-        def __init__(self, form=None):
-            Instance.__init__(self, form)
+            def __init__(self, form=None):
+                Instance.__init__(self, form)
 
-    Model.__name__ = cls.__name__
-    return Model
+        Model.__name__ = cls.__name__
+        return Model
 
 
 class App(object):
@@ -59,7 +62,6 @@ class Library(object):
             if name.startswith('_') or name == "exports":
                 continue
 
-            print(type(self))
             _, instance_header = header(type(self), False)
 
             if is_mutable(attr):
@@ -122,8 +124,11 @@ def handle_exports(app_or_lib):
             logging.warning(f"{cls} is not of type {Meta} and may not support JSON encoding")
 
         expected_uri = uri(app_or_lib).append(cls.__name__)
-        if uri(cls) != expected_uri:
-            raise ValueError(f"the URI of {cls} should be {expected_uri}")
+
+        if uri(cls) == expected_uri:
+            pass
+        else:
+            raise ValueError(f"the URI of {cls} should be {expected_uri}, not {uri(cls)}")
 
         form[cls.__name__] = to_json(cls)
 
