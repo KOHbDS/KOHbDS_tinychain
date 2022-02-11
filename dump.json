@@ -1,0 +1,1597 @@
+[
+    [
+        "A",
+        {
+            "/state/collection/tensor/dense": [
+                [
+                    [
+                        4,
+                        3
+                    ],
+                    {
+                        "/state/scalar/value/number/float/32": {}
+                    }
+                ],
+                [
+                    0.6964691855978616,
+                    0.28613933495037946,
+                    0.2268514535642031,
+                    0.5513147690828912,
+                    0.7194689697855631,
+                    0.42310646012446096,
+                    0.9807641983846155,
+                    0.6848297385848633,
+                    0.48093190148436094,
+                    0.3921175181941505,
+                    0.3431780161508694,
+                    0.7290497073840416
+                ]
+            ]
+        }
+    ],
+    [
+        "svd2",
+        {
+            "/state/scalar/op/post": [
+                [
+                    "shape",
+                    {
+                        "$A/shape": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "n_orig",
+                    {
+                        "$shape": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "m_orig",
+                    {
+                        "$shape": [
+                            1
+                        ]
+                    }
+                ],
+                [
+                    "list_7f39e9658700",
+                    [
+                        {
+                            "$A/transpose": [
+                                null
+                            ]
+                        },
+                        {
+                            "$A": []
+                        }
+                    ]
+                ],
+                [
+                    "Tuple_7f39e9583340",
+                    {
+                        "$A/schema": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9583520",
+                    {
+                        "$Tuple_7f39e9583340": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9583940",
+                    {
+                        "$A/schema": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9583cd0",
+                    {
+                        "$Tuple_7f39e9583940": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "list_7f39e964a880",
+                    [
+                        {
+                            "$A": []
+                        },
+                        {
+                            "$A/transpose": [
+                                null
+                            ]
+                        }
+                    ]
+                ],
+                [
+                    "Tuple_7f39e9586700",
+                    {
+                        "$A/schema": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9586730",
+                    {
+                        "$Tuple_7f39e9586700": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9586be0",
+                    {
+                        "$A/schema": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9586f70",
+                    {
+                        "$Tuple_7f39e9586be0": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9587550",
+                    {
+                        "/state/scalar/ref/if": [
+                            {
+                                "$n_orig/gt": [
+                                    {
+                                        "$m_orig": []
+                                    }
+                                ]
+                            },
+                            [
+                                {
+                                    "/state/collection/tensor/einsum": {
+                                        "format": "...ij,...jk->ik",
+                                        "tensors": {
+                                            "$list_7f39e9658700": []
+                                        }
+                                    }
+                                },
+                                {
+                                    "$Tuple_7f39e9583520": [
+                                        1
+                                    ]
+                                },
+                                {
+                                    "$Tuple_7f39e9583cd0": [
+                                        1
+                                    ]
+                                }
+                            ],
+                            {
+                                "/state/scalar/ref/if": [
+                                    {
+                                        "$n_orig/lt": [
+                                            {
+                                                "$m_orig": []
+                                            }
+                                        ]
+                                    },
+                                    [
+                                        {
+                                            "/state/collection/tensor/einsum": {
+                                                "format": "...ij,...jk->ik",
+                                                "tensors": {
+                                                    "$list_7f39e964a880": []
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "$Tuple_7f39e9586730": [
+                                                0
+                                            ]
+                                        },
+                                        {
+                                            "$Tuple_7f39e9586f70": [
+                                                0
+                                            ]
+                                        }
+                                    ],
+                                    [
+                                        {
+                                            "$A": []
+                                        },
+                                        {
+                                            "$n_orig": []
+                                        },
+                                        {
+                                            "$m_orig": []
+                                        }
+                                    ]
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "A1",
+                    {
+                        "$Tuple_7f39e9587550": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "qr",
+                    {
+                        "/state/scalar/op/post": [
+                            [
+                                "Tuple_7f39e953fa30",
+                                {
+                                    "$x/shape": [
+                                        null
+                                    ]
+                                }
+                            ],
+                            [
+                                "m",
+                                {
+                                    "$Tuple_7f39e953fa30": [
+                                        0
+                                    ]
+                                }
+                            ],
+                            [
+                                "Tuple_7f39e953f6a0",
+                                {
+                                    "$x/shape": [
+                                        null
+                                    ]
+                                }
+                            ],
+                            [
+                                "n",
+                                {
+                                    "$Tuple_7f39e953f6a0": [
+                                        1
+                                    ]
+                                }
+                            ],
+                            [
+                                "householder",
+                                {
+                                    "/state/scalar/op/post": [
+                                        [
+                                            "alpha",
+                                            {
+                                                "$x": [
+                                                    [
+                                                        0
+                                                    ]
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Tuple_7f39e9549cd0",
+                                            {
+                                                "$x/shape": [
+                                                    null
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Int_7f39e9549610",
+                                            {
+                                                "$Tuple_7f39e9549cd0": [
+                                                    0
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Slice_7f39e9549310",
+                                            {
+                                                "$x": [
+                                                    [
+                                                        [
+                                                            [
+                                                                "in",
+                                                                1
+                                                            ],
+                                                            [
+                                                                "ex",
+                                                                null
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Slice_7f39e9549190",
+                                            {
+                                                "$Slice_7f39e9549310/pow": {
+                                                    "r": 2
+                                                }
+                                            }
+                                        ],
+                                        [
+                                            "s",
+                                            {
+                                                "/state/scalar/ref/if": [
+                                                    {
+                                                        "$Int_7f39e9549610/gt": [
+                                                            1
+                                                        ]
+                                                    },
+                                                    {
+                                                        "$Slice_7f39e9549190/sum": [
+                                                            null
+                                                        ]
+                                                    },
+                                                    0.0
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Slice_7f39e9542eb0",
+                                            {
+                                                "$alpha/pow": {
+                                                    "r": 2
+                                                }
+                                            }
+                                        ],
+                                        [
+                                            "Tensor_7f39e9542850",
+                                            {
+                                                "$Slice_7f39e9542eb0/add": {
+                                                    "r": {
+                                                        "$s": []
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        [
+                                            "t",
+                                            {
+                                                "$Tensor_7f39e9542850/pow": {
+                                                    "r": 0.5
+                                                }
+                                            }
+                                        ],
+                                        [
+                                            "v",
+                                            {
+                                                "/state/collection/tensor/copy_from": {
+                                                    "tensor": {
+                                                        "$x": []
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        [
+                                            "F32_7f39e95421f0",
+                                            {
+                                                "$s/mul": [
+                                                    -1
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Tensor_7f39e9541190",
+                                            {
+                                                "$alpha/add": {
+                                                    "r": {
+                                                        "$t": []
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        [
+                                            "v_zero",
+                                            {
+                                                "/state/scalar/ref/if": [
+                                                    {
+                                                        "$alpha/lte": {
+                                                            "r": 0
+                                                        }
+                                                    },
+                                                    {
+                                                        "$alpha/sub": {
+                                                            "r": {
+                                                                "$t": []
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "$F32_7f39e95421f0/div": [
+                                                            {
+                                                                "$Tensor_7f39e9541190": []
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Tuple_7f39e95b8e20",
+                                            {
+                                                "$x/shape": [
+                                                    null
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "Int_7f39e95b8490",
+                                            {
+                                                "$Tuple_7f39e95b8e20": [
+                                                    0
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "F32_7f39e9541970",
+                                            {
+                                                "$s/abs": [
+                                                    null
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "F64_7f39e9541a90",
+                                            {
+                                                "$v_zero/pow": [
+                                                    2
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "F64_7f39e9541ca0",
+                                            {
+                                                "$F64_7f39e9541a90/mul": [
+                                                    2
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "F64_7f39e95b8580",
+                                            {
+                                                "$v_zero/pow": [
+                                                    2
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "F32_7f39e95b8190",
+                                            {
+                                                "$s/add": [
+                                                    {
+                                                        "$F64_7f39e95b8580": []
+                                                    }
+                                                ]
+                                            }
+                                        ],
+                                        [
+                                            "_return",
+                                            [
+                                                {
+                                                    "/state/scalar/ref/if": [
+                                                        {
+                                                            "$Int_7f39e95b8490/gt": [
+                                                                1
+                                                            ]
+                                                        },
+                                                        {
+                                                            "/state/scalar/ref/after": [
+                                                                {
+                                                                    "$v": [
+                                                                        [
+                                                                            0
+                                                                        ],
+                                                                        {
+                                                                            "$v_zero": []
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                {
+                                                                    "$v/div": {
+                                                                        "r": {
+                                                                            "$v_zero": []
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "$v": []
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "/state/scalar/ref/if": [
+                                                        {
+                                                            "$F32_7f39e9541970/lt": [
+                                                                1e-06
+                                                            ]
+                                                        },
+                                                        0,
+                                                        {
+                                                            "$F64_7f39e9541ca0/div": [
+                                                                {
+                                                                    "$F32_7f39e95b8190": []
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        ]
+                                    ]
+                                }
+                            ],
+                            [
+                                "Stream_7f39e953cc70",
+                                {
+                                    "/state/stream/range": [
+                                        {
+                                            "$n": []
+                                        }
+                                    ]
+                                }
+                            ],
+                            [
+                                "Stream_7f39e953fc70",
+                                {
+                                    "/state/stream/range": [
+                                        [
+                                            0,
+                                            {
+                                                "$m": []
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ],
+                            [
+                                "Stream_7f39e953f2b0",
+                                {
+                                    "$Stream_7f39e953fc70/map": {
+                                        "op": {
+                                            "/state/scalar/op/get": [
+                                                "i",
+                                                [
+                                                    [
+                                                        "_return",
+                                                        [
+                                                            [
+                                                                {
+                                                                    "$i": []
+                                                                },
+                                                                {
+                                                                    "$i": []
+                                                                }
+                                                            ],
+                                                            1
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        }
+                                    }
+                                }
+                            ],
+                            [
+                                "Sparse_7f39e953f310",
+                                {
+                                    "/state/collection/tensor/sparse/copy_from": {
+                                        "schema": [
+                                            [
+                                                {
+                                                    "$m": []
+                                                },
+                                                {
+                                                    "$m": []
+                                                }
+                                            ],
+                                            {
+                                                "/state/scalar/value/number/float/64": {}
+                                            }
+                                        ],
+                                        "source": {
+                                            "$Stream_7f39e953f2b0": []
+                                        }
+                                    }
+                                }
+                            ],
+                            [
+                                "Map_7f39e953cb50",
+                                {
+                                    "$Stream_7f39e953cc70/fold": {
+                                        "item_name": "k",
+                                        "value": {
+                                            "Q": {
+                                                "$Sparse_7f39e953f310/dense": [
+                                                    null
+                                                ]
+                                            },
+                                            "R": {
+                                                "/state/collection/tensor/copy_from": {
+                                                    "tensor": {
+                                                        "$x": []
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "op": {
+                                            "/state/scalar/ref/with": [
+                                                [
+                                                    {
+                                                        "$m": []
+                                                    },
+                                                    {
+                                                        "$householder": []
+                                                    }
+                                                ],
+                                                {
+                                                    "/state/scalar/op/post": [
+                                                        [
+                                                            "Slice_7f39e95b8160",
+                                                            {
+                                                                "$R": [
+                                                                    [
+                                                                        [
+                                                                            [
+                                                                                "in",
+                                                                                {
+                                                                                    "$k": []
+                                                                                }
+                                                                            ],
+                                                                            [
+                                                                                "ex",
+                                                                                null
+                                                                            ]
+                                                                        ],
+                                                                        {
+                                                                            "$k": []
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Tuple_7f39e95b8a30",
+                                                            {
+                                                                "$householder": {
+                                                                    "x": {
+                                                                        "$Slice_7f39e95b8160": []
+                                                                    }
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "v",
+                                                            {
+                                                                "$Tuple_7f39e95b8a30": [
+                                                                    0
+                                                                ]
+                                                            }
+                                                        ],
+                                                        [
+                                                            "tau",
+                                                            {
+                                                                "$Tuple_7f39e95b8a30": [
+                                                                    1
+                                                                ]
+                                                            }
+                                                        ],
+                                                        [
+                                                            "v_outer",
+                                                            {
+                                                                "/state/collection/tensor/einsum": {
+                                                                    "format": "i,j->ij",
+                                                                    "tensors": [
+                                                                        {
+                                                                            "$v": []
+                                                                        },
+                                                                        {
+                                                                            "$v": []
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Stream_7f39e9541070",
+                                                            {
+                                                                "/state/stream/range": [
+                                                                    [
+                                                                        0,
+                                                                        {
+                                                                            "$m": []
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Stream_7f39e9541280",
+                                                            {
+                                                                "$Stream_7f39e9541070/map": {
+                                                                    "op": {
+                                                                        "/state/scalar/op/get": [
+                                                                            "i",
+                                                                            [
+                                                                                [
+                                                                                    "_return",
+                                                                                    [
+                                                                                        [
+                                                                                            {
+                                                                                                "$i": []
+                                                                                            },
+                                                                                            {
+                                                                                                "$i": []
+                                                                                            }
+                                                                                        ],
+                                                                                        1
+                                                                                    ]
+                                                                                ]
+                                                                            ]
+                                                                        ]
+                                                                    }
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Sparse_7f39e9541e80",
+                                                            {
+                                                                "/state/collection/tensor/sparse/copy_from": {
+                                                                    "schema": [
+                                                                        [
+                                                                            {
+                                                                                "$m": []
+                                                                            },
+                                                                            {
+                                                                                "$m": []
+                                                                            }
+                                                                        ],
+                                                                        {
+                                                                            "/state/scalar/value/number/float/64": {}
+                                                                        }
+                                                                    ],
+                                                                    "source": {
+                                                                        "$Stream_7f39e9541280": []
+                                                                    }
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Dense_7f39e9542970",
+                                                            {
+                                                                "$Sparse_7f39e9541e80/dense": [
+                                                                    null
+                                                                ]
+                                                            }
+                                                        ],
+                                                        [
+                                                            "H",
+                                                            {
+                                                                "/state/collection/tensor/copy_from": {
+                                                                    "tensor": {
+                                                                        "$Dense_7f39e9542970": []
+                                                                    }
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Slice_7f39e9542bb0",
+                                                            {
+                                                                "$H": [
+                                                                    [
+                                                                        [
+                                                                            [
+                                                                                "in",
+                                                                                {
+                                                                                    "$k": []
+                                                                                }
+                                                                            ],
+                                                                            [
+                                                                                "ex",
+                                                                                null
+                                                                            ]
+                                                                        ],
+                                                                        [
+                                                                            [
+                                                                                "in",
+                                                                                {
+                                                                                    "$k": []
+                                                                                }
+                                                                            ],
+                                                                            [
+                                                                                "ex",
+                                                                                null
+                                                                            ]
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            }
+                                                        ],
+                                                        [
+                                                            "Tensor_7f39e9542a30",
+                                                            {
+                                                                "$v_outer/mul": {
+                                                                    "r": {
+                                                                        "$tau": []
+                                                                    }
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "H_sub",
+                                                            {
+                                                                "$Slice_7f39e9542bb0/sub": {
+                                                                    "r": {
+                                                                        "$Tensor_7f39e9542a30": []
+                                                                    }
+                                                                }
+                                                            }
+                                                        ],
+                                                        [
+                                                            "_return",
+                                                            {
+                                                                "/state/scalar/ref/after": [
+                                                                    {
+                                                                        "$H": [
+                                                                            [
+                                                                                [
+                                                                                    [
+                                                                                        "in",
+                                                                                        {
+                                                                                            "$k": []
+                                                                                        }
+                                                                                    ],
+                                                                                    [
+                                                                                        "ex",
+                                                                                        null
+                                                                                    ]
+                                                                                ],
+                                                                                [
+                                                                                    [
+                                                                                        "in",
+                                                                                        {
+                                                                                            "$k": []
+                                                                                        }
+                                                                                    ],
+                                                                                    [
+                                                                                        "ex",
+                                                                                        null
+                                                                                    ]
+                                                                                ]
+                                                                            ],
+                                                                            {
+                                                                                "$H_sub": []
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "Q": {
+                                                                            "/state/collection/tensor/einsum": {
+                                                                                "format": "...ij,...jk->ik",
+                                                                                "tensors": [
+                                                                                    {
+                                                                                        "$H": []
+                                                                                    },
+                                                                                    {
+                                                                                        "$Q": []
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "R": {
+                                                                            "/state/collection/tensor/einsum": {
+                                                                                "format": "...ij,...jk->ik",
+                                                                                "tensors": [
+                                                                                    {
+                                                                                        "$H": []
+                                                                                    },
+                                                                                    {
+                                                                                        "$R": []
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ],
+                            [
+                                "Tensor_7f39e953cbe0",
+                                {
+                                    "$Map_7f39e953cb50": [
+                                        "Q"
+                                    ]
+                                }
+                            ],
+                            [
+                                "Slice_7f39e953c850",
+                                {
+                                    "$Tensor_7f39e953cbe0": [
+                                        [
+                                            [
+                                                [
+                                                    "in",
+                                                    null
+                                                ],
+                                                [
+                                                    "ex",
+                                                    {
+                                                        "$n": []
+                                                    }
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                }
+                            ],
+                            [
+                                "Tensor_7f39e953c310",
+                                {
+                                    "$Map_7f39e953cb50": [
+                                        "R"
+                                    ]
+                                }
+                            ],
+                            [
+                                "_return",
+                                [
+                                    {
+                                        "$Slice_7f39e953c850/transpose": [
+                                            null
+                                        ]
+                                    },
+                                    {
+                                        "$Tensor_7f39e953c310": [
+                                            [
+                                                [
+                                                    [
+                                                        "in",
+                                                        null
+                                                    ],
+                                                    [
+                                                        "ex",
+                                                        {
+                                                            "$n": []
+                                                        }
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            ]
+                        ]
+                    }
+                ],
+                [
+                    "UInt_563b9b260dc0",
+                    0
+                ],
+                [
+                    "list_7f39e958f040",
+                    [
+                        {
+                            "$Tuple_7f39e9587550": [
+                                1
+                            ]
+                        },
+                        {
+                            "/state/scalar/ref/if": [
+                                {
+                                    "$UInt_563b9b260dc0/eq": [
+                                        {
+                                            "$l": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "/state/scalar/ref/if": [
+                                        {
+                                            "$n_orig/lte": [
+                                                {
+                                                    "$m_orig": []
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "$n_orig": []
+                                        },
+                                        {
+                                            "$m_orig": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "$l": []
+                                }
+                            ]
+                        }
+                    ]
+                ],
+                [
+                    "Dense_7f39e9587ee0",
+                    {
+                        "/state/collection/tensor/dense/random/uniform": [
+                            {
+                                "$list_7f39e958f040": []
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "Dense_7f39e9592040",
+                    {
+                        "$Dense_7f39e9587ee0/abs": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9592190",
+                    {
+                        "$qr": {
+                            "x": {
+                                "$Dense_7f39e9592040": []
+                            }
+                        }
+                    }
+                ],
+                [
+                    "Tensor_7f39e95924f0",
+                    {
+                        "$Tuple_7f39e9592190": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "Map_7f39e9592f10",
+                    {
+                        "/state/scalar/ref/while": [
+                            {
+                                "/state/scalar/ref/with": [
+                                    [
+                                        {
+                                            "$epsilon": []
+                                        },
+                                        {
+                                            "$max_iter": []
+                                        }
+                                    ],
+                                    {
+                                        "/state/scalar/op/post": [
+                                            [
+                                                "Bool_7f39e9542340",
+                                                {
+                                                    "$err/gt": [
+                                                        {
+                                                            "$epsilon": []
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            [
+                                                "Bool_7f39e9542dc0",
+                                                {
+                                                    "$i/lt": [
+                                                        {
+                                                            "$max_iter": []
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            [
+                                                "_return",
+                                                {
+                                                    "$Bool_7f39e9542340/and": [
+                                                        {
+                                                            "$Bool_7f39e9542dc0": []
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "/state/scalar/ref/with": [
+                                    [
+                                        {
+                                            "$qr": []
+                                        },
+                                        {
+                                            "$A1": []
+                                        }
+                                    ],
+                                    {
+                                        "/state/scalar/op/post": [
+                                            [
+                                                "Tensor_7f39e9542e80",
+                                                {
+                                                    "/state/collection/tensor/einsum": {
+                                                        "format": "...ij,...jk->ik",
+                                                        "tensors": [
+                                                            {
+                                                                "$A1": []
+                                                            },
+                                                            {
+                                                                "$Q": []
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "Tuple_7f39e9542580",
+                                                {
+                                                    "$qr": {
+                                                        "x": {
+                                                            "$Tensor_7f39e9542e80": []
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "Tensor_7f39e95422e0",
+                                                {
+                                                    "$Tuple_7f39e9542580": [
+                                                        0
+                                                    ]
+                                                }
+                                            ],
+                                            [
+                                                "Tensor_7f39e9541fd0",
+                                                {
+                                                    "$Tensor_7f39e95422e0/sub": {
+                                                        "r": {
+                                                            "$Q_prev": []
+                                                        }
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "Tensor_7f39e95417f0",
+                                                {
+                                                    "$Tensor_7f39e9541fd0/pow": {
+                                                        "r": 2
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "_return",
+                                                {
+                                                    "i": {
+                                                        "$i/add": [
+                                                            1
+                                                        ]
+                                                    },
+                                                    "Q_prev": {
+                                                        "/state/collection/tensor/copy_from": {
+                                                            "tensor": {
+                                                                "$Tensor_7f39e95422e0": []
+                                                            }
+                                                        }
+                                                    },
+                                                    "Q": {
+                                                        "$Tuple_7f39e9542580": [
+                                                            0
+                                                        ]
+                                                    },
+                                                    "R": {
+                                                        "$Tuple_7f39e9542580": [
+                                                            1
+                                                        ]
+                                                    },
+                                                    "err": {
+                                                        "$Tensor_7f39e95417f0/sum": [
+                                                            null
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "i": 0,
+                                "Q_prev": {
+                                    "/state/collection/tensor/copy_from": {
+                                        "tensor": {
+                                            "$Tensor_7f39e95924f0": []
+                                        }
+                                    }
+                                },
+                                "Q": {
+                                    "/state/collection/tensor/copy_from": {
+                                        "tensor": {
+                                            "$Tensor_7f39e95924f0": []
+                                        }
+                                    }
+                                },
+                                "R": {
+                                    "$Tuple_7f39e9592190": [
+                                        1
+                                    ]
+                                },
+                                "err": 1.0
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "State_7f39e95961c0",
+                    {
+                        "$Map_7f39e9592f10": [
+                            "R"
+                        ]
+                    }
+                ],
+                [
+                    "Tensor_7f39e9596130",
+                    {
+                        "$State_7f39e95961c0/diagonal": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tensor_7f39e9596280",
+                    {
+                        "$Tensor_7f39e9596130/pow": {
+                            "r": 0.5
+                        }
+                    }
+                ],
+                [
+                    "Tuple_7f39e95965b0",
+                    {
+                        "$Tensor_7f39e9596280/schema": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "Tuple_7f39e9596790",
+                    {
+                        "$Tuple_7f39e95965b0": [
+                            0
+                        ]
+                    }
+                ],
+                [
+                    "tuple_7f39e95e90c0",
+                    [
+                        0,
+                        {
+                            "$Tuple_7f39e9596790": [
+                                0
+                            ]
+                        }
+                    ]
+                ],
+                [
+                    "Stream_7f39e9596bb0",
+                    {
+                        "/state/stream/range": [
+                            {
+                                "$tuple_7f39e95e90c0": []
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "Stream_7f39e95967f0",
+                    {
+                        "$Stream_7f39e9596bb0/map": {
+                            "op": {
+                                "/state/scalar/op/get": [
+                                    "i",
+                                    [
+                                        [
+                                            "_return",
+                                            [
+                                                [
+                                                    {
+                                                        "$i": []
+                                                    },
+                                                    {
+                                                        "$i": []
+                                                    }
+                                                ],
+                                                1
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            }
+                        }
+                    }
+                ],
+                [
+                    "Sparse_7f39e9596dc0",
+                    {
+                        "/state/collection/tensor/sparse/copy_from": {
+                            "schema": [
+                                [
+                                    {
+                                        "$Tuple_7f39e9596790": [
+                                            0
+                                        ]
+                                    },
+                                    {
+                                        "$Tuple_7f39e9596790": [
+                                            0
+                                        ]
+                                    }
+                                ],
+                                {
+                                    "/state/scalar/value/number/float/32": {}
+                                }
+                            ],
+                            "source": {
+                                "$Stream_7f39e95967f0": []
+                            }
+                        }
+                    }
+                ],
+                [
+                    "Dense_7f39e9596e20",
+                    {
+                        "$Sparse_7f39e9596dc0/dense": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "eye",
+                    {
+                        "/state/collection/tensor/copy_from": {
+                            "tensor": {
+                                "$Dense_7f39e9596e20": []
+                            }
+                        }
+                    }
+                ],
+                [
+                    "Tensor_7f39e9598940",
+                    {
+                        "$Tensor_7f39e9596280/pow": {
+                            "r": -1
+                        }
+                    }
+                ],
+                [
+                    "inv_matrix",
+                    {
+                        "$eye/mul": {
+                            "r": {
+                                "$Tensor_7f39e9598940": []
+                            }
+                        }
+                    }
+                ],
+                [
+                    "Tensor_7f39e95960a0",
+                    {
+                        "$Map_7f39e9592f10": [
+                            "Q"
+                        ]
+                    }
+                ],
+                [
+                    "Q_T",
+                    {
+                        "$Tensor_7f39e95960a0/transpose": [
+                            null
+                        ]
+                    }
+                ],
+                [
+                    "list_7f39e95a9200",
+                    [
+                        {
+                            "/state/collection/tensor/copy_from": {
+                                "tensor": {
+                                    "$A": []
+                                }
+                            }
+                        },
+                        {
+                            "$Map_7f39e9592f10": [
+                                "Q"
+                            ]
+                        }
+                    ]
+                ],
+                [
+                    "list_7f39e95a9280",
+                    [
+                        {
+                            "/state/collection/tensor/einsum": {
+                                "format": "ij,jk->ik",
+                                "tensors": {
+                                    "$list_7f39e95a9200": []
+                                }
+                            }
+                        },
+                        {
+                            "$inv_matrix": []
+                        }
+                    ]
+                ],
+                [
+                    "vec_sing_values_upd",
+                    {
+                        "/state/scalar/ref/if": [
+                            {
+                                "$n_orig/eq": [
+                                    {
+                                        "$m_orig": []
+                                    }
+                                ]
+                            },
+                            {
+                                "left_vecs": {
+                                    "$Q_T": []
+                                },
+                                "right_vecs": {
+                                    "$Q_T": []
+                                },
+                                "singular_values": {
+                                    "$Tensor_7f39e9596280/pow": {
+                                        "r": 2
+                                    }
+                                }
+                            },
+                            {
+                                "left_vecs": {
+                                    "/state/collection/tensor/einsum": {
+                                        "format": "ij,jk->ik",
+                                        "tensors": {
+                                            "$list_7f39e95a9280": []
+                                        }
+                                    }
+                                },
+                                "right_vecs": {
+                                    "$Q_T": []
+                                },
+                                "singular_values": {
+                                    "$Tensor_7f39e9596130/pow": {
+                                        "r": 0.5
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "list_7f39e95ad640",
+                    [
+                        {
+                            "$inv_matrix": []
+                        },
+                        {
+                            "$Map_7f39e9592f10": [
+                                "Q"
+                            ]
+                        }
+                    ]
+                ],
+                [
+                    "list_7f39e95a9400",
+                    [
+                        {
+                            "/state/collection/tensor/einsum": {
+                                "format": "ij,jk->ik",
+                                "tensors": {
+                                    "$list_7f39e95ad640": []
+                                }
+                            }
+                        },
+                        {
+                            "/state/collection/tensor/copy_from": {
+                                "tensor": {
+                                    "$A": []
+                                }
+                            }
+                        }
+                    ]
+                ],
+                [
+                    "Map_7f39e95af1c0",
+                    {
+                        "/state/scalar/ref/if": [
+                            {
+                                "$n_orig/lt": [
+                                    {
+                                        "$m_orig": []
+                                    }
+                                ]
+                            },
+                            {
+                                "left_vecs": {
+                                    "$Q_T": []
+                                },
+                                "right_vecs": {
+                                    "/state/collection/tensor/einsum": {
+                                        "format": "ij,jk->ik",
+                                        "tensors": {
+                                            "$list_7f39e95a9400": []
+                                        }
+                                    }
+                                },
+                                "singular_values": {
+                                    "$Tensor_7f39e9596130/pow": {
+                                        "r": 0.5
+                                    }
+                                }
+                            },
+                            {
+                                "$vec_sing_values_upd": []
+                            }
+                        ]
+                    }
+                ],
+                [
+                    "_return",
+                    [
+                        {
+                            "$Map_7f39e95af1c0": [
+                                "left_vecs"
+                            ]
+                        },
+                        {
+                            "$Map_7f39e95af1c0": [
+                                "singular_values"
+                            ]
+                        },
+                        {
+                            "$Map_7f39e95af1c0": [
+                                "right_vecs"
+                            ]
+                        }
+                    ]
+                ]
+            ]
+        }
+    ],
+    [
+        "result",
+        {
+            "$svd2": {
+                "A": {
+                    "$A": []
+                },
+                "l": 0,
+                "epsilon": 1e-05,
+                "max_iter": 1000
+            }
+        }
+    ]
+]
