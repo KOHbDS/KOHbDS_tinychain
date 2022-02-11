@@ -7,8 +7,20 @@ import tinychain as tc
 URI = tc.URI("/test/neural_net")
 
 
-@tc.app.model
-class Activation(object):
+# TODO: support abstract methods
+class Differentiable(tc.Interface):
+    @tc.post_method
+    def forward(self, inputs) -> tc.tensor.Tensor:
+        pass
+
+    # TODO: support type hints using typing.Tuple, e.g. Tuple[Tensor, Tuple[Parameter]]
+    @tc.post_method
+    def backward(self, inputs) -> tc.Tuple:
+        pass
+
+
+# TODO: add support for @classmethod and @staticmethod to app.model
+class Activation(tc.app.Model, Differentiable):
     __uri__ = URI + "/Activation"
 
     @tc.get_method
@@ -23,12 +35,10 @@ class Activation(object):
         return tc.error.NotImplemented("Activation is an abstract class")
 
     @tc.post_method
-    def backward(self, _inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
+    def backward(self, _inputs: tc.tensor.Tensor) -> tc.Tuple:
         return tc.error.NotImplemented("Activation is an abstract class")
 
 
-# TODO: add support for @classmethod and @staticmethod to app.model
-@tc.app.model
 class Sigmoid(Activation):
     """Sigmoid activation function"""
 
@@ -46,7 +56,7 @@ class Sigmoid(Activation):
         return 1 / (1 + (-inputs).exp())
 
     @tc.post_method
-    def backward(self, inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
+    def backward(self, inputs: tc.tensor.Tensor) -> tc.Tuple:
         sig = self.forward(inputs=inputs)  # TODO: cache this value
         return sig * (1 - sig)
 
@@ -60,12 +70,9 @@ class Trainer(tc.app.Library):
             Sigmoid,
         ]
 
-    def __init__(self):
-        pass
-
     @tc.post_method
     def forward(self, cxt, inputs: tc.tensor.Tensor) -> tc.tensor.Tensor:
-        cxt.activation = Sigmoid()
+        cxt.activation = self.Sigmoid(None)
         return cxt.activation.forward(inputs=inputs)
 
 

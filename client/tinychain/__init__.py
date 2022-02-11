@@ -1,3 +1,5 @@
+import abc
+
 import tinychain.chain
 import tinychain.collection.bound as bound
 import tinychain.error
@@ -16,7 +18,7 @@ from tinychain.collection import btree, table, tensor
 from tinychain.decorators import closure, delete_method, get_method, post_method, put_method, delete_op, get_op, post_op, put_op
 from tinychain.ml import linalg
 from tinychain.ref import After, Case, If, While
-from tinychain.reflect import Meta
+from tinychain.reflect import Interface, Meta
 from tinychain.state import Class, Map, State, Scalar, Stream, Tuple
 from tinychain.value import *
 from tinychain.util import form_of, print_json, to_json, uri, use, Context, URI

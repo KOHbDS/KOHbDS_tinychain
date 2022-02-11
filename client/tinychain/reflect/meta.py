@@ -17,18 +17,17 @@ class MethodStub(object):
         return self.dtype(header, self.form, name)
 
 
-def header(cls, requires_form=True):
+def header(cls):
     instance_uri = URI("self")
 
     class Header(cls):
         pass
 
-    if requires_form:
+    try:
         header = Header(instance_uri)
         instance = cls(instance_uri)
-    else:
-        header = Header()
-        instance = cls()
+    except TypeError as e:
+        raise TypeError(f"unable to generate headers for {cls}: {e}")
 
     for name, attr in inspect.getmembers(instance):
         if name.startswith('_') or isinstance(attr, URI):
@@ -67,11 +66,16 @@ class Meta(type):
     """The metaclass of a :class:`State` which provides support for `form_of` and `to_json`."""
 
     def __form__(cls):
-        mro = cls.mro()
-        if len(mro) < 2:
-            raise ValueError("TinyChain class must extend a subclass of State")
+        mro = cls.mro()[1:]
 
-        parent_members = dict(inspect.getmembers(mro[1](URI("self"))))
+        if mro:
+            try:
+                parent_instance = mro[0](URI("self"))
+                parent_members = dict(inspect.getmembers(parent_instance))
+            except TypeError as e:
+                raise TypeError(f"unable to inspect parent {mro[0]} of {cls}: {e}")
+        else:
+            parent_members = dict()
 
         instance, instance_header = header(cls)
 

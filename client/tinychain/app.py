@@ -10,37 +10,94 @@ from tinychain.state import Instance, Scalar, State
 from tinychain.util import get_ref, to_json, uri, URI
 
 
+class Model(object, metaclass=Meta):
+    def __ref__(self, name):
+        raise RuntimeError("cannot reference a Model itself; try using App.<model name>.load")
+
+    def _is_static(self):
+        for name, attr in inspect.getmembers(self):
+            if name.startswith('_'):
+                continue
+
+            if issubclass(attr, State):
+                return False
+
+        return True
+
+
 def model(cls):
-    if not inspect.isclass(cls):
+    if not issubclass(cls, Model):
         raise ValueError(f"Model must be a class, not {cls}")
 
     if not hasattr(cls, "__uri__"):
-        raise ValueError(f"a Model must have a URI (hint: set the __uri__ attribute of the class)")
+        raise ValueError(f"Model {cls} must have a URI (hint: set the __uri__ attribute of the class)")
 
-    if issubclass(cls, Instance):
-        return cls
-    else:
-        class Model(Instance, cls, metaclass=Meta):
-            __uri__ = cls.__uri__
+    try:
+        proto = cls()
+    except TypeError as e:
+        raise TypeError(f"error constructing model for {cls}: {e}")
 
-            def __init__(self, form=None):
-                Instance.__init__(self, form)
+    attrs = {}
+    for name, attr in inspect.getmembers(proto):
+        if name.startswith('_'):
+            continue
+        elif isinstance(attr, MethodStub):
+            continue
+        elif hasattr(Model, name):
+            continue
 
-        Model.__name__ = cls.__name__
-        return Model
+        if not inspect.isclass(attr):
+            raise TypeError(f"model attribute must be a type of State, not {attr}")
+
+        if issubclass(attr, Model):
+            attr = model(attr)
+        elif not issubclass(attr, State):
+            raise TypeError(f"unknown model attribute type: {attr}")
+
+        attrs[name] = attr(URI("self").append(name))
+
+    class _Model(Instance, cls):
+        __uri__ = cls.__uri__
+
+        def __init__(self, form):
+            Instance.__init__(self, form)
+
+            for name in attrs:
+                setattr(self, name, attrs[name])
+
+        def __ref__(self, name):
+            return self.__class__(URI(name))
+
+    _Model.__name__ = cls.__name__
+    return _Model
 
 
-class App(object):
+class Library(object):
+    @staticmethod
+    def exports():
+        return []
+
+    def __init__(self, uri=None):
+        if uri is not None:
+            self.__uri__ = uri
+
+        for cls in self.exports():
+            setattr(self, cls.__name__, model(cls))
+
+        self._allow_mutable = False
+
     def __json__(self):
-        form = handle_exports(self.exports())
-
-        _, instance_header = header(self, False)
+        form = handle_exports(self)
 
         for name, attr in inspect.getmembers(self):
             if name.startswith('_') or name == "exports":
                 continue
 
-            if is_mutable(attr) and not isinstance(attr, Chain):
+            _, instance_header = header(type(self))
+
+            if not self._allow_mutable and is_mutable(attr):
+                raise RuntimeError(f"{self.__class__.__name__} may not contain mutable state")
+            if self._allow_mutable and is_mutable(attr) and not isinstance(attr, Chain):
                 raise RuntimeError("mutable state must be in a Chain")
             elif isinstance(attr, MethodStub):
                 form[name] = to_json(attr.method(instance_header, name))
@@ -50,28 +107,10 @@ class App(object):
         return {str(uri(self)): form}
 
 
-class Library(object):
-    @staticmethod
-    def exports():
-        return []
-
-    def __json__(self):
-        form = handle_exports(self)
-
-        for name, attr in inspect.getmembers(self):
-            if name.startswith('_') or name == "exports":
-                continue
-
-            _, instance_header = header(type(self), False)
-
-            if is_mutable(attr):
-                raise RuntimeError("a Library may not contain mutable state")
-            elif isinstance(attr, MethodStub):
-                form[name] = to_json(attr.method(instance_header, name))
-            else:
-                form[name] = to_json(attr)
-
-        return {str(uri(self)): form}
+class App(Library):
+    def __init__(self, uri=None):
+        Library.__init__(self, uri)
+        self._allow_mutable = True
 
 
 def is_mutable(state):
@@ -118,8 +157,8 @@ def handle_exports(app_or_lib):
     form = {}
 
     for cls in app_or_lib.exports():
-        if not inspect.isclass(cls):
-            raise ValueError(f"Library can only export a class, not {cls}")
+        if not issubclass(cls, Model):
+            raise ValueError(f"Library can only export a Model class, not {cls}")
         elif type(cls) != Meta:
             logging.warning(f"{cls} is not of type {Meta} and may not support JSON encoding")
 
@@ -130,6 +169,6 @@ def handle_exports(app_or_lib):
         else:
             raise ValueError(f"the URI of {cls} should be {expected_uri}, not {uri(cls)}")
 
-        form[cls.__name__] = to_json(cls)
+        form[cls.__name__] = to_json(model(cls))
 
     return form

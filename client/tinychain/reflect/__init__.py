@@ -7,6 +7,10 @@ from tinychain.util import deanonymize, form_of, get_ref, to_json, uri, URI
 from .meta import gen_headers, header, Meta
 
 
+class Interface(object):
+    pass
+
+
 def is_conditional(state):
     from tinychain.ref import Case, If
     from tinychain.state import State
