@@ -2,47 +2,10 @@ import inspect
 
 from pydoc import locate
 
-from tinychain.state import Class, Instance, Map, State
-from tinychain.util import deanonymize, form_of, to_json, uri, URI
+from tinychain.util import deanonymize, form_of, get_ref, to_json, uri, URI
+from tinychain.state import State
 
-from .meta import gen_headers, Meta
-
-
-class Object(Class, metaclass=Meta):
-    def __init__(self, form=None):
-        self.class_uri = uri(self.__class__)
-        super().__init__(form)
-
-    def __json__(self):
-        form = form_of(self)
-        if is_ref(form):
-            return to_json(form)
-        else:
-            return {str(self.class_uri): to_json(form)}
-
-    def __ns__(self, cxt):
-        deanonymize(super(), cxt)
-
-        if uri(self.__class__) == uri(Class):
-            name = f"Class_{self.__class__.__name__}_{format(id(self.__class__), 'x')}"
-
-            if not name in cxt:
-                setattr(cxt, name, self.__class__)
-
-            self.class_uri = URI(name)
-
-
-def _get_rtype(fn, default_rtype):
-    if is_op(fn):
-        return fn.rtype
-
-    rtype = default_rtype
-
-    if inspect.isfunction(fn):
-        annotation = inspect.signature(fn).return_annotation
-        rtype = resolve_class(fn, annotation, rtype)
-
-    return rtype
+from .meta import gen_headers, header, Meta
 
 
 def is_conditional(state):
@@ -104,3 +67,16 @@ def resolve_class(subject, annotation, default):
         raise ValueError(f"unable to resolve class {classpath}")
     else:
         return resolved
+
+
+def _get_rtype(fn, default_rtype):
+    if is_op(fn):
+        return fn.rtype
+
+    rtype = default_rtype
+
+    if inspect.isfunction(fn):
+        annotation = inspect.signature(fn).return_annotation
+        rtype = resolve_class(fn, annotation, rtype)
+
+    return rtype
